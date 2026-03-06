@@ -118,3 +118,6 @@ POST /upload-url
 ### Ask Question
 
 POST /ask
+
+---
+<img width="677" height="739" alt="image" src="https://github.com/user-attachments/assets/d005f743-e6ca-495b-a49c-c0aff93c9897" />
