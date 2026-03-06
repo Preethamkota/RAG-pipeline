@@ -1,0 +1,4 @@
+ollama serve
+ollama pull nomic-embed-text
+ollama pull ollama3.2
+uvicorn main:app --reload

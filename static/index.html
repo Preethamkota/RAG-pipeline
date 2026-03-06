@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>RAG Document Q&A</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    button:hover {
+      background: #1e40af;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .answer-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+
+    hr {
+      margin: 30px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>📄 RAG Document Q&A</h1>
+
+    <!-- ===================== -->
+    <!-- TEXT UPLOAD -->
+    <!-- ===================== -->
+    <div class="section">
+      <h3>1️⃣ Paste Text</h3>
+      <textarea id="textInput" placeholder="Paste document text here..."></textarea>
+      <button onclick="uploadText()">Upload Text</button>
+    </div>
+
+    <hr>
+
+    <!-- ===================== -->
+    <!-- PDF UPLOAD -->
+    <!-- ===================== -->
+    <div class="section">
+      <h3>2️⃣ Upload PDF</h3>
+      <input type="file" id="pdfInput" accept=".pdf">
+      <button onclick="uploadPDF()">Upload PDF</button>
+    </div>
+
+    <hr>
+
+    <!-- ===================== -->
+    <!-- URL UPLOAD -->
+    <!-- ===================== -->
+    <div class="section">
+      <h3>3️⃣ Paste URL</h3>
+      <input id="urlInput" placeholder="https://example.com/article" />
+      <button onclick="uploadURL()">Upload URL</button>
+    </div>
+
+    <div class="status" id="uploadStatus"></div>
+
+    <hr>
+
+    <!-- ===================== -->
+    <!-- ASK QUESTION -->
+    <!-- ===================== -->
+    <div class="section">
+      <h3>❓ Ask a Question</h3>
+      <input id="questionInput" placeholder="Type your question here..." />
+      <button onclick="askQuestion()">Ask</button>
+
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:8000";
+
+    // -------------------------
+    // Upload Text
+    // -------------------------
+    async function uploadText() {
+      const text = document.getElementById("textInput").value;
+      const status = document.getElementById("uploadStatus");
+
+      if (!text.trim()) {
+        status.innerText = "❌ Please enter some text.";
+        return;
+      }
+
+      status.innerText = "Uploading text... ⏳";
+
+      const response = await fetch(`${API_BASE}/upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      const data = await response.json();
+
+      status.innerText = response.ok
+        ? `✅ Text indexed (${data.chunks_indexed} chunks)`
+        : `❌ Error: ${data.detail}`;
+    }
+
+    // -------------------------
+    // Upload PDF
+    // -------------------------
+    async function uploadPDF() {
+      const fileInput = document.getElementById("pdfInput");
+      const status = document.getElementById("uploadStatus");
+
+      if (!fileInput.files.length) {
+        status.innerText = "❌ Please select a PDF file.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      status.innerText = "Uploading PDF... ⏳";
+
+      const response = await fetch(`${API_BASE}/upload-pdf`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      status.innerText = response.ok
+        ? `✅ PDF indexed (${data.chunks_indexed} chunks)`
+        : `❌ Error: ${data.detail}`;
+    }
+
+    // -------------------------
+    // Upload URL
+    // -------------------------
+    async function uploadURL() {
+      const url = document.getElementById("urlInput").value;
+      const status = document.getElementById("uploadStatus");
+
+      if (!url.trim()) {
+        status.innerText = "❌ Please enter a URL.";
+        return;
+      }
+
+      status.innerText = "Fetching URL content... ⏳";
+
+      const response = await fetch(`${API_BASE}/upload-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+
+      const data = await response.json();
+
+      status.innerText = response.ok
+        ? `✅ URL indexed (${data.chunks_indexed} chunks)`
+        : `❌ Error: ${data.detail}`;
+    }
+
+    // -------------------------
+    // Ask Question
+    // -------------------------
+    async function askQuestion() {
+      const question = document.getElementById("questionInput").value;
+      const answerBox = document.getElementById("answerBox");
+
+      if (!question.trim()) {
+        answerBox.innerText = "❌ Please enter a question.";
+        return;
+      }
+
+      answerBox.innerText = "Thinking... 🤔";
+
+      const response = await fetch(`${API_BASE}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        let sourcesHtml = data.sources
+          .map(s => `• ${s}`)
+          .join("<br>");
+
+        answerBox.innerHTML = `
+    <b>Answer:</b><br>${data.answer}<br><br>
+    <b>Sources:</b><br>${sourcesHtml}
+  `;
+      }
+
+    }
+  </script>
+
+</body>
+
+</html>
