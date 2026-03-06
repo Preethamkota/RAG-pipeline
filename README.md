@@ -96,3 +96,25 @@ The system will:
 - Generate an answer using the LLM
 
 ## API Endpoints
+
+### Upload Text
+
+POST /upload
+
+---
+
+### Upload PDF
+
+POST /upload-pdf
+
+---
+
+### Upload URL
+
+POST /upload-url
+
+---
+
+### Ask Question
+
+POST /ask
